@@ -12,3 +12,5 @@ log = { version = "0.4.20", features = ["std", "serde"] }
 log4rs = "1.2.0"
 rocket = { version = "0.5.0", features = ["json"] }
 serde = { version = "1.0.196", features = ["serde_derive"] }
+utoipa = { version = "4.2.0", features = ["chrono", "rocket_extras"] }
+utoipa-swagger-ui = { version = "6.0.0", features = ["rocket"] }
