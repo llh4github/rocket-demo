@@ -6,3 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = { version = "0.4.33", features = ["serde"] }
+log4rs = "1.2.0"
+rocket = { version = "0.5.0", features = ["json"] }
+serde = { version = "1.0.196", features = ["serde_derive"] }
