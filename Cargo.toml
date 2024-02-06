@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 chrono = { version = "0.4.33", features = ["serde"] }
+figment = { version = "0.10.14", features = ["env", "toml", "json"] }
 log = { version = "0.4.20", features = ["std", "serde"] }
 # wait 1.3
 log4rs = "1.2.0"
