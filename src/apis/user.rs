@@ -23,7 +23,10 @@ impl Routes {
 }
 
 /// 获取用户列表
-#[utoipa::path(path = "/user/list", tag = TAG,responses((status=200,body=User)))]
+#[utoipa::path(path = "/user/list", 
+    tag = TAG,
+    responses((status=200, body=Vec<User>)))
+]
 #[get("/user/list")]
 pub fn get_list() -> Json<Vec<User>> {
     Json(vec![User::new()])
