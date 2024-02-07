@@ -1,7 +1,7 @@
 use rocket::serde::json::Json;
 use utoipa::OpenApi;
 
-use crate::config::{self, App};
+use crate::config::types::{App, Db};
 
 /// utoipa 没法自动生成正确的tag，手动指定下。
 const TAG: &str = "测试接口";
@@ -10,7 +10,7 @@ const TAG: &str = "测试接口";
     tags((name = "测试接口", description = "测试用的")),
     paths(get_config),
     components(
-        schemas(config::App)
+        schemas(App,Db)
     ),
 )]
 pub struct Routes;
@@ -25,8 +25,9 @@ impl Routes {
     tag = TAG,
     responses((status=200, body=App)))
 ]
+#[deprecated(note="应用内配置不应暴露出来")]
 #[get("/config")]
 fn get_config() -> Json<App> {
-    let cnf: config::App = config::App::figment().extract().unwrap();
+    let cnf: App = App::figment().extract().unwrap();
     return Json(cnf);
 }
