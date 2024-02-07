@@ -1,3 +1,5 @@
+use std::net::{IpAddr, Ipv4Addr};
+
 use figment::{
     providers::{Env, Format, Serialized, Toml},
     Figment, Profile,
@@ -10,7 +12,11 @@ use utoipa::ToSchema;
 #[serde(crate = "rocket::serde")]
 pub struct App {
     /// 应用名称
-    name: String,
+    pub name: String,
+    /// IP address to serve on. **(default: `127.0.0.1`)**
+    pub address: IpAddr,
+    /// Port to serve on. **(default: `8000`)**
+    pub port: u16,
 }
 
 impl App {
@@ -26,6 +32,8 @@ impl Default for App {
     fn default() -> Self {
         Self {
             name: "Rocket-Web-Api-Demo".to_string(),
+            port: 8000,
+            address: Ipv4Addr::new(127, 0, 0, 1).into(),
         }
     }
 }
