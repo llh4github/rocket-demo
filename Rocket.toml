@@ -1,9 +1,0 @@
-[default]
-name = "Demo App"
-[debug]
-name = "Demo App Debug"
-address = "127.0.0.1"
-port = 8001
-workers = 1
-keep_alive = 0
-log_level = "debug"
