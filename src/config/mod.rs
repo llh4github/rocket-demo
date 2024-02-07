@@ -1,7 +1,5 @@
-use std::sync::OnceLock;
-
 use rocket::{fairing::AdHoc, Rocket};
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{apis, config::types::App};
@@ -9,7 +7,7 @@ use crate::{apis, config::types::App};
 pub mod types;
 
 /// DB实例
-static DB: OnceLock<DatabaseBackend> = OnceLock::new();
+static DB: tokio::sync::OnceCell<DatabaseConnection> = tokio::sync::OnceCell::const_new();
 
 /// 初始化web服务
 pub fn init_server() -> Rocket<rocket::Build> {
@@ -27,30 +25,24 @@ pub fn init_server() -> Rocket<rocket::Build> {
     let _ = get_db();
     rk
 }
-fn get_db() -> &'static DatabaseBackend {
-    DB.get_or_init(init_db)
+pub async fn get_db() -> &'static DatabaseConnection {
+    DB.get_or_init(init_db).await
 }
 /// 初始化数据库连接
-fn init_db() -> DatabaseBackend {
+async fn init_db() -> DatabaseConnection {
     let cnf: App = App::figment().extract().unwrap();
 
     let url = cnf.db.url;
     let mut options = ConnectOptions::new(url);
     options.min_connections(cnf.db.min_conn);
     options.sqlx_logging_level(cnf.db.log_level);
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let db = rt.block_on(async {
-        let db = Database::connect(options).await;
-        let db = match db {
-            Ok(conn) => conn,
-            Err(e) => {
-                panic!("db connection failed! {}", e)
-            }
-        };
-        db
-    });
-
-    let db = db.get_database_backend();
+    let db = Database::connect(options).await;
+    let db = match db {
+        Ok(conn) => conn,
+        Err(e) => {
+            panic!("db connection failed! {}", e)
+        }
+    };
     info!("数据库连接成功！");
     db
 }
