@@ -1,4 +1,3 @@
-use log::info;
 use rocket::routes;
 use rocket::serde::json::Json;
 use sea_orm::EntityTrait;
