@@ -1,6 +1,6 @@
 use rocket::routes;
 use rocket::serde::json::Json;
-use sea_orm::EntityTrait;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use utoipa::OpenApi;
 
 use crate::config::get_db;
@@ -11,7 +11,7 @@ const TAG: &str = "用户信息接口";
 #[derive(OpenApi)]
 #[openapi(
     tags((name = "用户信息接口", description = "操作用户数据的")),
-    paths(get_by_id),
+    paths(get_by_id,search_list),
     components(
         schemas(user::Model)
     ),
@@ -19,9 +19,11 @@ const TAG: &str = "用户信息接口";
 pub struct Routes;
 impl Routes {
     pub fn url_list() -> Vec<rocket::Route> {
-        routes![get_by_id]
+        routes![get_by_id, search_list]
     }
 }
+
+type User = crate::entity::prelude::User;
 /// 获取用户列表
 #[utoipa::path(path = "/user/id", 
     tag = TAG,
@@ -29,27 +31,22 @@ impl Routes {
 ]
 #[get("/user/id")]
 async fn get_by_id() -> Json<Option<user::Model>> {
-    type User = crate::entity::prelude::User;
     let rs = User::find_by_id(1).one(get_db().await).await.unwrap();
     Json(rs)
 }
 
-// 获取用户列表
-// #[utoipa::path(path = "/user/list",
-//     tag = TAG,
-//     responses((status=200, body=Vec<User>)))
-// ]
-// #[get("/user/list")]
-// pub fn get_list() -> Json<Vec<User>> {
-//     Json(vec![User::new()])
-// }
-// 添加用户数据
-// #[utoipa::path(path = "/user/add",
-//     tag = TAG,
-//     responses((status=200, body=Option<User>)))
-// ]
-// #[post("/user/add", data = "<data>")]
-// pub fn add(data: Json<User>) -> Json<Option<User>> {
-//     info!("接收到的数据： {:?}", data);
-//     Json(Some(data.0))
-// }
+/// 搜索用户列表
+#[utoipa::path(path = "/user/search",
+    tag = TAG,
+    responses((status=200, body=Vec<user::Model>)))
+]
+#[get("/user/search?<name>")]
+async fn search_list(name: String) -> Json<Vec<user::Model>> {
+    let list: Vec<user::Model> = User::find()
+        .filter(crate::entity::user::Column::Name.contains(name))
+        .all(get_db().await)
+        .await
+        .unwrap();
+    return Json(list);
+}
+
