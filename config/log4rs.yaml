@@ -8,12 +8,11 @@ appenders:
     encoder:
       pattern: "{d} - {m}{n}"
 root:
-  level: debug
+  level: warn
   appenders:
     - stdout
     - requests
 
 loggers:
-  rocket:
-    level: warn
-      
+  rocket_demo:
+    level: debug

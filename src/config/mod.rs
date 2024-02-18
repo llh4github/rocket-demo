@@ -1,39 +1,48 @@
-use std::net::{IpAddr, Ipv4Addr};
+use rocket::{fairing::AdHoc, Rocket};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use utoipa_swagger_ui::SwaggerUi;
 
-use figment::{
-    providers::{Env, Format, Serialized, Toml},
-    Figment, Profile,
-};
-use rocket::serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use crate::{apis, config::types::App};
 
-/// 应用配置类
-#[derive(Debug, Deserialize, ToSchema, Serialize)]
-#[serde(crate = "rocket::serde")]
-pub struct App {
-    /// 应用名称
-    pub name: String,
-    /// IP address to serve on. **(default: `127.0.0.1`)**
-    pub address: IpAddr,
-    /// Port to serve on. **(default: `8000`)**
-    pub port: u16,
+pub mod types;
+
+/// DB实例
+static DB: tokio::sync::OnceCell<DatabaseConnection> = tokio::sync::OnceCell::const_new();
+
+/// 初始化web服务
+pub fn init_server() -> Rocket<rocket::Build> {
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+
+    let rk = rocket::custom(App::figment())
+        .mount(
+            "/",
+            SwaggerUi::new("/swagger-ui/<_..>")
+                .url("/api-docs/openapi.json", apis::get_all_api_doc()),
+        )
+        .mount("/", apis::get_all_api_define())
+        .attach(AdHoc::config::<App>());
+    info!("web server init success!");
+    let _ = get_db();
+    rk
 }
-
-impl App {
-    pub fn figment() -> Figment {
-        Figment::from(rocket::Config::default())
-            .merge(Serialized::defaults(App::default()))
-            .merge(Toml::file("App.toml").nested())
-            .merge(Env::prefixed("APP_").global())
-            .select(Profile::from_env_or("APP_PROFILE", "default"))
-    }
+pub async fn get_db() -> &'static DatabaseConnection {
+    DB.get_or_init(init_db).await
 }
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            name: "Rocket-Web-Api-Demo".to_string(),
-            port: 8000,
-            address: Ipv4Addr::new(127, 0, 0, 1).into(),
+/// 初始化数据库连接
+async fn init_db() -> DatabaseConnection {
+    let cnf: App = App::figment().extract().unwrap();
+
+    let url = cnf.db.url;
+    let mut options = ConnectOptions::new(url);
+    options.min_connections(cnf.db.min_conn);
+    options.sqlx_logging_level(cnf.db.log_level);
+    let db = Database::connect(options).await;
+    let db = match db {
+        Ok(conn) => conn,
+        Err(e) => {
+            panic!("db connection failed! {}", e)
         }
-    }
+    };
+    info!("数据库连接成功！");
+    db
 }

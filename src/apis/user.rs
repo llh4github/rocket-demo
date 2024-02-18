@@ -1,62 +1,52 @@
-use log::info;
 use rocket::routes;
 use rocket::serde::json::Json;
-use serde::{Deserialize, Serialize};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use utoipa::OpenApi;
-use utoipa::ToSchema;
+
+use crate::config::get_db;
+use crate::entity::user;
 
 /// utoipa 没法自动生成正确的tag，手动指定下。
 const TAG: &str = "用户信息接口";
 #[derive(OpenApi)]
 #[openapi(
     tags((name = "用户信息接口", description = "操作用户数据的")),
-    paths(get_list,add),
+    paths(get_by_id,search_list),
     components(
-        schemas(User)
+        schemas(user::Model)
     ),
 )]
 pub struct Routes;
 impl Routes {
     pub fn url_list() -> Vec<rocket::Route> {
-        routes![get_list, add]
+        routes![get_by_id, search_list]
     }
 }
 
+type User = crate::entity::prelude::User;
 /// 获取用户列表
-#[utoipa::path(path = "/user/list", 
+#[utoipa::path(path = "/user/id", 
     tag = TAG,
-    responses((status=200, body=Vec<User>)))
+    responses((status=200, body=Option<user::Model>)))
 ]
-#[get("/user/list")]
-pub fn get_list() -> Json<Vec<User>> {
-    Json(vec![User::new()])
+#[get("/user/id")]
+async fn get_by_id() -> Json<Option<user::Model>> {
+    let rs = User::find_by_id(1).one(get_db().await).await.unwrap();
+    Json(rs)
 }
-/// 添加用户数据
-#[utoipa::path(path = "/user/add", 
+
+/// 搜索用户列表
+#[utoipa::path(path = "/user/search",
     tag = TAG,
-    responses((status=200, body=Option<User>)))
+    responses((status=200, body=Vec<user::Model>)))
 ]
-#[post("/user/add", data = "<data>")]
-pub fn add(data: Json<User>) -> Json<Option<User>> {
-    info!("接收到的数据： {:?}", data);
-    Json(Some(data.0))
+#[get("/user/search?<name>")]
+async fn search_list(name: String) -> Json<Vec<user::Model>> {
+    let list: Vec<user::Model> = User::find()
+        .filter(crate::entity::user::Column::Name.contains(name))
+        .all(get_db().await)
+        .await
+        .unwrap();
+    return Json(list);
 }
-/// 模拟用户数据
-///
-/// 接入数据库后删除
-#[derive(Serialize, Deserialize, ToSchema, Clone, Debug)]
-pub struct User {
-    /// 名称
-    name: String,
-    /// 年纪
-    #[schema(example = 1)]
-    age: i32,
-}
-impl User {
-    fn new() -> User {
-        User {
-            name: "Tom".to_string(),
-            age: 33,
-        }
-    }
-}
+
