@@ -1,18 +1,31 @@
-refresh_rate: 30 seconds
 appenders:
-  stdout:
-    kind: console
-  requests:
-    kind: file
-    path: "log/requests.log"
-    encoder:
-      pattern: "{d} - {m}{n}"
+    stdout:
+        kind: console
+        encoder:
+            pattern: "{d(%Y-%m-%dT%H:%M:%S%.3f)} [{f}:{L}] {h({l})} {M}:{m}{n}"
+        filters:
+            - kind: threshold
+              level: info
+    rollingfile:
+        kind: rolling_file
+        path: "log/requests.log"
+        encoder:
+            pattern: "{d(%Y-%m-%dT%H:%M:%S%.3f)} [{f}:{L}] {h({l})} {M}:{m}{n}"
+        policy:
+            trigger:
+                kind: time
+                interval: 1 minute
+            roller:
+                kind: fixed_window
+                pattern: "log/old-requests-{}.log"
+                base: 0
+                count: 2
 root:
-  level: warn
-  appenders:
-    - stdout
-    - requests
-
+    level: warn
+    appenders:
+        - stdout
+        - rollingfile
 loggers:
   rocket_demo:
     level: debug
+
