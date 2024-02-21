@@ -1891,6 +1891,7 @@ dependencies = [
  "log4rs",
  "rocket",
  "rocket_okapi",
+ "schemars",
  "sea-orm",
  "serde",
  "serde_json",

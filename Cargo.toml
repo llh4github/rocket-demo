@@ -27,3 +27,4 @@ utoipa-swagger-ui = { version = "6.0.0", features = ["rocket"] }
 tokio = { version = "1", features = ["full"] }
 validator = { version = "0.16.1", features = ["derive"] }
 rocket_okapi = { version = "0.8.0", features = ["swagger"] }
+schemars = "0.8.16"

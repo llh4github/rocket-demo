@@ -1,3 +1,7 @@
+use rocket::{serde::json::Json, Rocket};
+
+use rocket_okapi::{openapi, openapi_get_routes, swagger_ui::{make_swagger_ui, SwaggerUIConfig}, JsonSchema};
+use serde::{Deserialize, Serialize};
 #[macro_use]
 extern crate rocket;
 
@@ -11,14 +15,19 @@ fn rocket() -> _ {
     launch_openapi()
 }
 
-async fn launch_openapi() {
+fn launch_openapi() -> Rocket<rocket::Build> {
     rocket::build()
         .mount(
             "/",
             openapi_get_routes![get_all_users, get_user, get_user_by_name, create_user,],
         )
-        .launch()
-        .await
+        .mount(
+            "/swagger-ui/",
+            make_swagger_ui(&SwaggerUIConfig {
+                url: "../openapi.json".to_owned(),
+                ..Default::default()
+            }),
+        )
 }
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
