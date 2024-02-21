@@ -1,8 +1,4 @@
-use std::fs::File;
-
 use log::debug;
-use rocket::form::Form;
-use rocket::fs::TempFile;
 use rocket::routes;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
@@ -16,15 +12,15 @@ const TAG: &str = "接口入参出参案例";
 #[derive(OpenApi)]
 #[openapi(
     tags((name = "接口入参出参案例", description = "功能测试")),
-    paths(add,query,upload_file),
+    paths(add,query),
     components(
-        schemas(InputBody,Color,UploadFile)
+        schemas(InputBody,Color)
     ),
 )]
 pub struct Routes;
 impl Routes {
     pub fn url_list() -> Vec<rocket::Route> {
-        routes![add, query, upload_file, upload]
+        routes![add, query,]
     }
 }
 /// 输入参数案例
@@ -84,36 +80,4 @@ fn query(name: &str, age: Option<usize>, color: Vec<Color>, page: Page) -> Json<
         name, age, color, page
     );
     Json(name)
-}
-
-/// 文件上传的参数
-#[derive(Debug, PartialEq, ToSchema, FromForm)]
-struct UploadFile<'r> {
-    /// 文件原始名
-    name: &'r str,
-    /// 二进制文件
-    #[schema(value_type = String, format = Binary)]
-    file: Vec<u8>,
-
-    #[schema(value_type = String, format = Binary)]
-    file2: File,
-}
-/// 测试上传文件
-///
-/// todo 这里有问题，没法用
-#[utoipa::path(path = "/demo1/upload",
-    tag = TAG,
-    responses((status=200,body=UploadFile)),
-)]
-#[post("/demo1/upload", data = "<upload>")]
-fn upload_file(upload: Form<UploadFile<'_>>) -> Json<&str> {
-    debug!("upload body is {:?}", upload);
-    Json("ok")
-}
-
-#[post("/demo1/upload2", data = "<file>")]
-async fn upload(mut file: TempFile<'_>) -> std::io::Result<()> {
-    debug!("file name {:?}", file.raw_name());
-    // file.persist_to("/tmp/complete/file.txt").await?;
-    Ok(())
 }
