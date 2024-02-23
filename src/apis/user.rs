@@ -1,10 +1,10 @@
 use rocket::routes;
 use rocket::serde::json::Json;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm_rocket::Connection;
 use utoipa::OpenApi;
 
-use crate::config::get_db;
-use crate::entity::user;
+use crate::{config::Db, entity::user};
 
 /// utoipa 没法自动生成正确的tag，手动指定下。
 const TAG: &str = "用户信息接口";
@@ -30,8 +30,10 @@ type User = crate::entity::prelude::User;
     responses((status=200, body=Option<user::Model>)))
 ]
 #[get("/user/id")]
-async fn get_by_id() -> Json<Option<user::Model>> {
-    let rs = User::find_by_id(1).one(get_db().await).await.unwrap();
+async fn get_by_id(conn: Connection<'_, Db>) -> Json<Option<user::Model>> {
+    let db = conn.into_inner();
+
+    let rs = User::find_by_id(1).one(db).await.unwrap();
     Json(rs)
 }
 
@@ -41,12 +43,12 @@ async fn get_by_id() -> Json<Option<user::Model>> {
     responses((status=200, body=Vec<user::Model>)))
 ]
 #[get("/user/search?<name>")]
-async fn search_list(name: String) -> Json<Vec<user::Model>> {
+async fn search_list(conn: Connection<'_, Db>, name: String) -> Json<Vec<user::Model>> {
+    let db = conn.into_inner();
     let list: Vec<user::Model> = User::find()
         .filter(crate::entity::user::Column::Name.contains(name))
-        .all(get_db().await)
+        .all(db)
         .await
         .unwrap();
     return Json(list);
 }
-
