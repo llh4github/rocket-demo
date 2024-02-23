@@ -25,3 +25,4 @@ serde_json = "1.0.113"
 utoipa = { version = "4.2.0", features = ["chrono", "rocket_extras"] }
 utoipa-swagger-ui = { version = "6.0.0", features = ["rocket"] }
 tokio = { version = "1", features = ["full"] }
+validator = { version = "0.16.1", features = ["derive"] }
