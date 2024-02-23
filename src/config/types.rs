@@ -24,6 +24,9 @@ impl App {
         Figment::from(rocket::Config::default())
             .merge(Serialized::defaults(App::default()))
             .merge(Toml::file("App.toml").nested())
+            .merge(Toml::file("App_local.toml").nested())
+            .merge(Toml::file("App_test.toml").nested())
+            .merge(Toml::file("App_prod.toml").nested())
             .merge(Env::prefixed("APP_").global())
             .select(Profile::from_env_or("APP_PROFILE", "default"))
     }
@@ -42,6 +45,7 @@ impl Default for App {
 #[derive(Debug, Deserialize, ToSchema, Serialize)]
 pub struct Db {
     /// 数据库连接字符串，默认为 **mysql://root:password@localhost:3306/demo**
+    /// 密码中含有特殊字符的需要用 url encoder
     pub url: String,
     pub min_conn: u32,
     pub log_level: log::LevelFilter,

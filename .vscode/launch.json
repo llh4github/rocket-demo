@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug run 'rocket-demo'",
             "env": {
-                "APP_PROFILE": "debug"
+                "APP_PROFILE": "local"
             },
             "cargo": {
                 "args": [
