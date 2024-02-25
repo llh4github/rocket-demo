@@ -5,10 +5,9 @@ use figment::{
     Figment, Profile,
 };
 use rocket::serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
 /// 应用配置类
-#[derive(Debug, Deserialize, ToSchema, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct App {
     /// 应用名称
     pub name: String,
@@ -16,7 +15,7 @@ pub struct App {
     pub address: IpAddr,
     /// Port to serve on. **(default: `8000`)**
     pub port: u16,
-    pub db: Db,
+    pub db: DbCnf,
 }
 
 impl App {
@@ -24,8 +23,9 @@ impl App {
         Figment::from(rocket::Config::default())
             .merge(Serialized::defaults(App::default()))
             .merge(Toml::file("App.toml").nested())
+            .merge(Toml::file("App_local.toml").nested())
             .merge(Env::prefixed("APP_").global())
-            .select(Profile::from_env_or("APP_PROFILE", "default"))
+            .select(Profile::from_env_or("APP_PROFILE", "local"))
     }
 }
 impl Default for App {
@@ -34,19 +34,20 @@ impl Default for App {
             name: "Rocket-Web-Api-Demo".to_string(),
             port: 8000,
             address: Ipv4Addr::new(127, 0, 0, 1).into(),
-            db: Db::default(),
+            db: DbCnf::default(),
         }
     }
 }
 
-#[derive(Debug, Deserialize, ToSchema, Serialize)]
-pub struct Db {
+#[derive(Debug, Deserialize,  Serialize)]
+pub struct DbCnf {
     /// 数据库连接字符串，默认为 **mysql://root:password@localhost:3306/demo**
+    /// 密码中含有特殊字符的需要用 url encoder
     pub url: String,
     pub min_conn: u32,
     pub log_level: log::LevelFilter,
 }
-impl Default for Db {
+impl Default for DbCnf {
     fn default() -> Self {
         Self {
             url: "mysql://root:root@localhost:3306/demo".to_string(),
