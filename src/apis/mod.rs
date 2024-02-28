@@ -3,12 +3,17 @@ mod role;
 use std::sync::{Mutex, OnceLock};
 
 use utoipa::OpenApi;
+
+use crate::dto::{IdList, PageQuery};
 #[derive(OpenApi)]
-#[openapi(info(
-    description = "My Api description",
-    title = "Rokct Demo Endpoint",
-    version = "0.1.0"
-))]
+#[openapi(
+    info(
+        description = "My Api description",
+        title = "Rokct Demo Endpoint",
+        version = "0.1.0"
+    ),
+    components(schemas(PageQuery, IdList))
+)]
 struct RootApiDoc;
 
 type RouteList = OnceLock<Mutex<Vec<rocket::Route>>>;
