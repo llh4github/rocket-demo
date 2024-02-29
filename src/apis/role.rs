@@ -88,11 +88,13 @@ async fn page(
 
     let mut condition = Condition::all();
     if dto.name.is_some() {
-        let name = dto.name.clone().unwrap();
-        condition = condition.add(auth_role::Column::Name.like(name));
+        let tmp = dto.name.clone().unwrap();
+        let tmp = format!("{}{}{}", "%", tmp, "%");
+        condition = condition.add(auth_role::Column::Name.like(tmp));
     }
     if dto.code.is_some() {
         let tmp = dto.code.clone().unwrap();
+        let tmp = format!("{}{}{}", "%", tmp, "%");
         condition = condition.add(auth_role::Column::Code.like(tmp));
     }
 

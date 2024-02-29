@@ -12,7 +12,7 @@ pub struct IdList {
 }
 
 /// 分页参数
-#[derive(Serialize, Deserialize, Validate, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, Validate, ToSchema, Clone, Copy)]
 pub struct PageQuery {
     /// 当前页
     pub index: u64,

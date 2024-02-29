@@ -13,7 +13,7 @@ pub struct RoleAddInput {
     pub code: String,
 }
 
-#[derive(Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Serialize, Deserialize, Validate, Clone, ToSchema)]
 pub struct PageParam {
     pub name: Option<String>,
     pub code: Option<String>,
