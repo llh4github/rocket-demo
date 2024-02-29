@@ -1,7 +1,7 @@
 use rocket::serde::json::Json;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
-    Set, TransactionTrait,
+    sea_query::func, ActiveModelTrait, ColumnTrait, Condition, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 use sea_orm_rocket::Connection;
 use utoipa::OpenApi;
@@ -9,7 +9,7 @@ use utoipa::OpenApi;
 use crate::{
     config::Db,
     dto::{
-        role::{PageParam, RoleAddInput},
+        role::{PageParam, RoleAddInput, RoleUpdateInput},
         IdList, PageResult,
     },
     entity::auth_role,
@@ -19,27 +19,49 @@ const TAG: &str = "角色信息接口";
 #[derive(OpenApi)]
 #[openapi(
     tags((name = "角色信息接口", description = "操作角色数据的")),
-    paths(add,delete_by_ids,page),
+    paths(add,updated_by_id,delete_by_ids,page),
     components(
         schemas(auth_role::Model,
             RoleAddInput,PageResult<auth_role::Model>,
-            PageParam)
+            PageParam,RoleUpdateInput,RoleUpdateInput)
     ),
 )]
 pub struct Routes;
 impl Routes {
     pub fn url_list() -> Vec<rocket::Route> {
-        routes![add, delete_by_ids, page]
+        routes![add, updated_by_id, delete_by_ids, page]
     }
 }
-
+/// 更新角色
+#[utoipa::path(path = "/role", 
+    tag = TAG,
+    request_body = RoleUpdateInput,
+    responses((status=200, body=auth_role::Model)))
+]
+#[put("/role", data = "<dto>")]
+async fn updated_by_id(
+    conn: Connection<'_, Db>,
+    dto: Json<RoleUpdateInput>,
+) -> Json<Option<auth_role::Model>> {
+    let db = conn.into_inner();
+    let option = auth_role::Entity::find_by_id(dto.id).one(db).await.unwrap();
+    if option.is_some() {
+        let txn = db.begin().await.unwrap();
+        let mut model: auth_role::ActiveModel = option.unwrap().into();
+        model.name = Set(dto.name.to_owned());
+        model.code = Set(dto.code.to_owned());
+        let model: auth_role::Model = model.update(&txn).await.unwrap();
+        return Json(Some(model));
+    }
+    Json(None)
+}
 /// 添加角色
-#[utoipa::path(path = "/role/add", 
+#[utoipa::path(path = "/role", 
     tag = TAG,
     request_body = RoleAddInput,
     responses((status=200, body=auth_role::Model)))
 ]
-#[post("/role/add", data = "<dto>")]
+#[post("/role", data = "<dto>")]
 async fn add(conn: Connection<'_, Db>, dto: Json<RoleAddInput>) -> Json<auth_role::Model> {
     let db = conn.into_inner();
     let txn = db.begin().await.unwrap();
@@ -102,12 +124,14 @@ async fn page(
         .order_by_desc(auth_role::Column::Id)
         .filter(condition)
         .paginate(db, dto.page.size);
-    let a = page.num_items_and_pages().await.unwrap();
-    let rs = page.fetch_page(dto.page.page_index()).await.unwrap();
+    let page_info = page.num_items_and_pages().await.unwrap();
+    let page_items = page.fetch_page(dto.page.page_index()).await.unwrap();
     let page_rs = PageResult {
-        tatol_page: a.number_of_pages,
-        totla_item: a.number_of_items,
-        records: rs,
+        tatol_page: page_info.number_of_pages,
+        totla_item: page_info.number_of_items,
+        records: page_items,
+        size: dto.page.size,
+        index: dto.page.index,
     };
     Json(page_rs)
 }

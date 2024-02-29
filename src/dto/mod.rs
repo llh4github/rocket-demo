@@ -43,4 +43,10 @@ pub struct PageResult<T> {
     pub totla_item: u64,
     /// 当前页数据
     pub records: Vec<T>,
+
+    /// 当前页
+    pub index: u64,
+
+    /// 页大小
+    pub size: u64,
 }

@@ -12,6 +12,15 @@ pub struct RoleAddInput {
     /// 代号
     pub code: String,
 }
+#[derive(Serialize, Deserialize, Validate, ToSchema)]
+pub struct RoleUpdateInput {
+    /// ID
+    pub id: u32,
+    /// 名称
+    pub name: String,
+    /// 代号
+    pub code: String,
+}
 
 #[derive(Serialize, Deserialize, Validate, Clone, ToSchema)]
 pub struct PageParam {
