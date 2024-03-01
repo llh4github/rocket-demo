@@ -2,9 +2,10 @@ mod demo1;
 mod role;
 use std::sync::{Mutex, OnceLock};
 
+use serde::Serialize;
 use utoipa::OpenApi;
 
-use crate::dto::{IdList, PageQuery};
+use crate::dto::{IdList, PageQuery, R};
 #[derive(OpenApi)]
 #[openapi(
     info(
@@ -37,4 +38,12 @@ pub fn get_all_api_define() -> Vec<rocket::Route> {
 fn add_routes(routes: Vec<rocket::Route>) {
     let r = ROUTES.get_or_init(|| Mutex::new(vec![]));
     r.lock().unwrap().extend(routes);
+}
+
+pub(crate) fn ok_r<T: Serialize>(data: T) -> R<T> {
+    R {
+        seccess: true,
+        msg: String::from("ok"),
+        data: data,
+    }
 }

@@ -7,6 +7,9 @@ use utoipa::OpenApi;
 use utoipa::ToSchema;
 use validator::Validate;
 
+use crate::apis::ok_r;
+use crate::dto::R;
+
 /// utoipa 没法自动生成正确的tag，手动指定下。
 const TAG: &str = "接口入参出参案例";
 #[derive(OpenApi)]
@@ -14,7 +17,7 @@ const TAG: &str = "接口入参出参案例";
     tags((name = "接口入参出参案例", description = "功能测试")),
     paths(add,query),
     components(
-        schemas(InputBody,Color)
+        schemas(InputBody,Color,R<String>,R<InputBody>)
     ),
 )]
 pub struct Routes;
@@ -25,19 +28,20 @@ impl Routes {
 }
 /// 输入参数案例
 #[derive(Deserialize, Serialize, Debug, ToSchema, Validate)]
-struct InputBody {
+pub struct InputBody {
     #[validate(range(min = 0, max = 100, message = "年龄不能超过限制"))]
-    age: u16,
+    pub age: u16,
     #[validate(range(min = 1, max = 10))]
-    hight: i32,
+    pub hight: i32,
 }
+
 /// 测试post参数
 #[utoipa::path(path = "/demo1/add",
     tag = TAG,
-    responses((status=200, body=InputBody)))
+    responses((status=200, body=AddResp)))
 ]
 #[post("/demo1/add", data = "<body>")]
-fn add(body: Json<InputBody>) -> Json<InputBody> {
+fn add(body: Json<InputBody>) -> R<InputBody> {
     match body.validate() {
         Ok(_) => (),
         Err(e) => {
@@ -45,7 +49,7 @@ fn add(body: Json<InputBody>) -> Json<InputBody> {
         }
     };
     debug!("input param {:?}", body.0);
-    Json(body.0)
+    ok_r(body.0)
 }
 
 /// 枚举值想在文档里显示好像只能注册到scheams中了。
@@ -67,17 +71,18 @@ struct Page {
 /// 测试查询参数
 #[utoipa::path(path = "/demo1/query",
     tag = TAG,
-    responses((status=200)),
+    responses((status=200,body=R<String>)),
     params(
         Page,
         ("name"=&str,Query,description="名字",example="Tom"),
     ),
 )]
 #[get("/demo1/query?<name>&<age>&<color>&<page..>")]
-fn query(name: &str, age: Option<usize>, color: Vec<Color>, page: Page) -> Json<&str> {
+fn query(name: &str, age: Option<usize>, color: Vec<Color>, page: Page) -> R<String> {
     debug!(
         "input name : {} , age {:?} ,color {:?} ,page {:?}",
         name, age, color, page
     );
-    Json(name)
+
+    ok_r(String::from(name))
 }

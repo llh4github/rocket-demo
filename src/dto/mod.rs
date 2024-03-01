@@ -1,5 +1,12 @@
 pub mod role;
 
+use std::io::Cursor;
+
+use rocket::{
+    http::ContentType,
+    response::{self, Responder},
+    Request, Response,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -49,4 +56,26 @@ pub struct PageResult<T> {
 
     /// 页大小
     pub size: u64,
+}
+
+/// 通用的响应结果
+#[derive(Serialize, Deserialize, Validate, ToSchema, Clone)]
+pub struct R<T: Serialize> {
+    /// 是否成功
+    pub seccess: bool,
+    /// 消息
+    pub msg: String,
+    /// 数据
+    pub data: T,
+}
+
+#[rocket::async_trait]
+impl<'r, T: Serialize> Responder<'r, 'static> for R<T> {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+        let json = serde_json::to_string(&self).unwrap();
+        Response::build()
+            .header(ContentType::JSON)
+            .sized_body(json.len(), Cursor::new(json))
+            .ok()
+    }
 }
